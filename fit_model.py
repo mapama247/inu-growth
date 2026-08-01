@@ -188,7 +188,11 @@ HTML = """<!DOCTYPE html>
 
     /* ── chart ── */
     #chart { width: 100%; height: 420px; }
-    @media (max-width: 620px) { #chart { height: 300px; } }
+    @media (max-width: 620px) {
+      .container { padding: 0 0.75rem; }
+      .card { padding: 1rem 0.75rem; }
+      #chart { height: 300px; }
+    }
 
     /* ── estimators grid ── */
     .est-grid {
@@ -484,7 +488,16 @@ Plotly.newPlot('chart', traces, {
       font: { size: 10, color: '#9CA3AF' }, xanchor: 'right', yanchor: 'bottom',
     },
   ],
-}, { responsive: true, displayModeBar: 'hover', displaylogo: false });
+}, {
+  responsive: true,
+  displaylogo: false,
+  // On touch devices: remove toolbar and disable all interaction so the chart
+  // doesn't fight with page scrolling. Desktop keeps hover tooltips.
+  ...(window.matchMedia('(hover: none)').matches
+    ? { staticPlot: true, displayModeBar: false }
+    : { displayModeBar: 'hover' }
+  ),
+});
 
 // ── estimators ────────────────────────────────────────────────────────────────
 function estimateWeight() {
