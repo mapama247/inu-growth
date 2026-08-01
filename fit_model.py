@@ -153,7 +153,7 @@ HTML = """<!DOCTYPE html>
     /* ── stats strip ── */
     .stats {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: .875rem;
       margin-top: -1.25rem;
       margin-bottom: 1.75rem;
@@ -188,6 +188,7 @@ HTML = """<!DOCTYPE html>
 
     /* ── chart ── */
     #chart { width: 100%; height: 420px; }
+    @media (max-width: 620px) { #chart { height: 300px; } }
 
     /* ── estimators grid ── */
     .est-grid {
@@ -286,8 +287,7 @@ HTML = """<!DOCTYPE html>
       <div>
         <div class="badge">Growth Tracker</div>
         <h1>Inu Growth Chart</h1>
-        <p>Gompertz growth model</p>
-        <p>Last updated __TODAY__</p>
+        <p>Last updated: __TODAY__</p>
       </div>
     </div>
   </div>
@@ -484,8 +484,7 @@ Plotly.newPlot('chart', traces, {
       font: { size: 10, color: '#9CA3AF' }, xanchor: 'right', yanchor: 'bottom',
     },
   ],
-}, { responsive: true, displayModeBar: true,
-     modeBarButtonsToRemove: ['lasso2d', 'select2d'], displaylogo: false });
+}, { responsive: true, displayModeBar: 'hover', displaylogo: false });
 
 // ── estimators ────────────────────────────────────────────────────────────────
 function estimateWeight() {
