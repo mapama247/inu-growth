@@ -452,17 +452,24 @@ const traces = [
     name: 'Measurements', hovertemplate: '%{x}: <b>%{y:.2f} kg</b><extra></extra>' },
 ];
 
+const isMobile = window.matchMedia('(hover: none)').matches;
+
 Plotly.newPlot('chart', traces, {
   paper_bgcolor: 'white', plot_bgcolor: '#FAFAFA',
   margin: { t: 10, r: 20, b: 48, l: 55 },
+  // On touch devices lock the axes so drag gestures don't pan/zoom —
+  // this lets the page scroll freely while tapping still shows tooltips.
+  dragmode: isMobile ? false : 'zoom',
   xaxis: {
     title: { text: 'Date', font: { size: 11 } },
     showgrid: true, gridcolor: '#F0EEE8', linecolor: '#E7E5E4', tickfont: { size: 11 },
+    fixedrange: isMobile,
   },
   yaxis: {
     title: { text: 'Weight (kg)', font: { size: 11 } },
     showgrid: true, gridcolor: '#F0EEE8', linecolor: '#E7E5E4',
     tickfont: { size: 11 }, rangemode: 'tozero',
+    fixedrange: isMobile,
   },
   showlegend: false,
   hovermode: 'x unified',
@@ -491,12 +498,7 @@ Plotly.newPlot('chart', traces, {
 }, {
   responsive: true,
   displaylogo: false,
-  // On touch devices: remove toolbar and disable all interaction so the chart
-  // doesn't fight with page scrolling. Desktop keeps hover tooltips.
-  ...(window.matchMedia('(hover: none)').matches
-    ? { staticPlot: true, displayModeBar: false }
-    : { displayModeBar: 'hover' }
-  ),
+  displayModeBar: isMobile ? false : 'hover',
 });
 
 // ── estimators ────────────────────────────────────────────────────────────────
