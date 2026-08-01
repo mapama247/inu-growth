@@ -47,7 +47,8 @@ r2 = float(1 - ss_res / ss_tot)
 rmse = float(np.sqrt(ss_res / len(w_data)))
 
 # ── Prediction curve: from 10 days before start to 2 years out ────────────────
-t_curve = np.linspace(-10, 730, 2000)
+# End at 18 months of age: 6 Jul 2027 = day 492 from ref date
+t_curve = np.linspace(-10, 492, 2000)
 w_curve = gompertz(t_curve, *popt)
 
 # 95 % confidence band via Monte Carlo
