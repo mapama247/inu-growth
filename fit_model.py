@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Fit a logistic growth model to dog weight data and generate a GitHub Pages site.
+Fit a Gompertz growth model to dog weight data and generate a GitHub Pages site.
 
 Usage:
     python fit_model.py
@@ -26,19 +26,21 @@ df["days"] = (df["date"] - ref_date).dt.days.astype(float)
 t_data = df["days"].values
 w_data = df["weight"].values.astype(float)
 
-# ── Logistic growth model: W(t) = L / (1 + exp(-k*(t - t_mid))) ──────────────
-def logistic(t, L, k, t_mid):
-    return L / (1 + np.exp(-k * (t - t_mid)))
+# ── Gompertz growth model: W(t) = L * exp(-exp(-k*(t - t_mid))) ──────────────
+# Inflection at W = L/e ≈ 37% of adult weight (vs 50% for logistic).
+# Better suited for animal growth: rapid early phase, slow late plateau.
+def gompertz(t, L, k, t_mid):
+    return L * np.exp(-np.exp(-k * (t - t_mid)))
 
 popt, pcov = curve_fit(
-    logistic, t_data, w_data,
-    p0=[25.0, 0.04, 100.0],
-    bounds=([5, 0.001, 0], [100, 1, 500]),
+    gompertz, t_data, w_data,
+    p0=[25.0, 0.04, 65.0],
+    bounds=([10, 0.001, 0], [100, 1, 500]),
     maxfev=20_000,
 )
 L_fit, k_fit, t_mid_fit = popt
 
-w_pred = logistic(t_data, *popt)
+w_pred = gompertz(t_data, *popt)
 ss_res = np.sum((w_data - w_pred) ** 2)
 ss_tot = np.sum((w_data - np.mean(w_data)) ** 2)
 r2 = float(1 - ss_res / ss_tot)
@@ -46,7 +48,7 @@ rmse = float(np.sqrt(ss_res / len(w_data)))
 
 # ── Prediction curve: from 10 days before start to 2 years out ────────────────
 t_curve = np.linspace(-10, 730, 2000)
-w_curve = logistic(t_curve, *popt)
+w_curve = gompertz(t_curve, *popt)
 
 # 95 % confidence band via Monte Carlo
 rng = np.random.default_rng(42)
@@ -55,7 +57,7 @@ param_samples = rng.multivariate_normal(popt, pcov, 3000)
 param_samples = param_samples[
     (param_samples[:, 0] > 0) & (param_samples[:, 1] > 0)
 ]
-w_mc = np.array([logistic(t_curve, *s) for s in param_samples])
+w_mc = np.array([gompertz(t_curve, *s) for s in param_samples])
 w_lo = np.percentile(w_mc, 2.5, axis=0)
 w_hi = np.percentile(w_mc, 97.5, axis=0)
 
@@ -71,7 +73,7 @@ today_days = (today - ref_date.to_pydatetime()).days
 split_idx = int(np.searchsorted(t_curve, today_days))
 
 # ── Summary ────────────────────────────────────────────────────────────────────
-print(f"Logistic fit results:")
+print(f"Gompertz fit results:")
 print(f"  L    = {L_fit:.3f} kg  (estimated adult weight)")
 print(f"  k    = {k_fit:.6f}  (growth rate)")
 print(f"  t₀   = {t_mid_fit:.1f} days  (inflection point)")
@@ -283,7 +285,7 @@ HTML = """<!DOCTYPE html>
       <div>
         <div class="badge">Growth Tracker</div>
         <h1>Inu Weight Growth</h1>
-        <p>Logistic growth model &middot; last updated __TODAY__</p>
+        <p>Gompertz growth model &middot; last updated __TODAY__</p>
       </div>
     </div>
   </div>
@@ -351,7 +353,7 @@ HTML = """<!DOCTYPE html>
 </main>
 
 <footer>
-  <div>Fitted with a <strong>logistic growth model</strong> &middot; built with Python &amp; Plotly.js</div>
+  <div>Fitted with a <strong>Gompertz growth model</strong> &middot; built with Python &amp; Plotly.js</div>
   <div class="param-strip" id="params"></div>
 </footer>
 
@@ -364,12 +366,13 @@ function daysFromRef(isoStr) {
   const d   = new Date(isoStr + 'T00:00:00');
   return (d - ref) / 86400000;
 }
-function logistic(days) {
-  return D.L / (1 + Math.exp(-D.k * (days - D.t_mid)));
+function gompertz(days) {
+  return D.L * Math.exp(-Math.exp(-D.k * (days - D.t_mid)));
 }
-function invertLogistic(w) {
+function invertGompertz(w) {
+  // t = t_mid - ln(-ln(w / L)) / k
   if (w <= 0 || w >= D.L) return null;
-  return D.t_mid - (1 / D.k) * Math.log(D.L / w - 1);
+  return D.t_mid - Math.log(-Math.log(w / D.L)) / D.k;
 }
 function daysToISO(days) {
   const ref = new Date(D.ref_date + 'T00:00:00');
@@ -490,7 +493,7 @@ function estimateWeight() {
   warnEl.style.display = 'none';
   if (!v) { warnEl.textContent = 'Please select a date.'; warnEl.style.display = 'block'; return; }
   const days = daysFromRef(v);
-  const w    = logistic(days);
+  const w    = gompertz(days);
   const ci   = ciAt(days);
   document.getElementById('res-w-val').textContent = `${w.toFixed(2)} kg`;
   const isPast = days <= D.today_days;
@@ -513,7 +516,7 @@ function estimateDate() {
     warnEl.textContent = `Weight must be below the estimated adult weight (${D.L.toFixed(1)} kg).`;
     warnEl.style.display = 'block'; return;
   }
-  const days = invertLogistic(wVal);
+  const days = invertGompertz(wVal);
   const iso  = daysToISO(days);
   const isPast = days <= D.today_days;
   document.getElementById('res-d-val').textContent = fmtDate(iso);
@@ -534,7 +537,7 @@ estimateWeight();
 const tbody = document.querySelector('#data-table tbody');
 D.data_x.forEach((dateStr, i) => {
   const actual  = D.data_y[i];
-  const model   = logistic(daysFromRef(dateStr));
+  const model   = gompertz(daysFromRef(dateStr));
   const resid   = (actual - model).toFixed(3);
   const prevW   = i > 0 ? D.data_y[i-1] : null;
   const prevD   = i > 0 ? daysFromRef(D.data_x[i-1]) : null;
