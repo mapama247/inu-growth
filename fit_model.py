@@ -285,8 +285,9 @@ HTML = """<!DOCTYPE html>
     <div class="inner">
       <div>
         <div class="badge">Growth Tracker</div>
-        <h1>Inu Weight Growth</h1>
-        <p>Gompertz growth model &middot; last updated __TODAY__</p>
+        <h1>Inu Growth Chart</h1>
+        <p>Gompertz growth model</p>
+        <p>Last updated __TODAY__</p>
       </div>
     </div>
   </div>
@@ -354,7 +355,7 @@ HTML = """<!DOCTYPE html>
 </main>
 
 <footer>
-  <div>Fitted with a <strong>Gompertz growth model</strong> &middot; built with Python &amp; Plotly.js</div>
+  <div>Fitted with a <strong>Gompertz growth model</strong></div>
   <div class="param-strip" id="params"></div>
 </footer>
 
@@ -558,7 +559,7 @@ D.data_x.forEach((dateStr, i) => {
 
 // ── footer params ─────────────────────────────────────────────────────────────
 document.getElementById('params').innerHTML =
-  `Model: L = ${D.L.toFixed(2)} kg &nbsp;|&nbsp; k = ${D.k.toFixed(5)} &nbsp;|&nbsp; ` +
+  `L = ${D.L.toFixed(2)} kg &nbsp;|&nbsp; k = ${D.k.toFixed(5)} &nbsp;|&nbsp; ` +
   `t<sub>0</sub> = ${D.t_mid.toFixed(1)} days &nbsp;|&nbsp; R² = ${D.r2.toFixed(4)}`;
 </script>
 </body>
